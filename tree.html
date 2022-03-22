@@ -135,78 +135,25 @@
     <script>
         var index = 0;
         var chart;
+        function attachDragHandler(chart){
+            // add drag and drop
+        const dragHandler = d3.select('.chart-container').selectAll('.node').call(d3.drag() // call specific function when circle is dragged
+        .on("start", chart.dragstarted)
+        .on("drag", chart.dragged)
+        .on("end", chart.dragended));
+        }
         d3.csv('misc/data.csv')
             .then(dataFlattened => {
                 chart = new d3.OrgChart()
                     .container('.chart-container')
                     .data(dataFlattened)
                     .scaleExtent([1,1])
-                    // .svgHeight(window.innerHeight)
-                    // .nodeWidth((d3Node) => {
-                    //     return 200;
-                    //     let i = 0;
-                    //     if (d3Node.parent) { i = d3Node.parent.children.indexOf(d3Node); }
-                    //     if (i && i == d3Node.parent.children.length - 1) { return 600; }
-                    //     return (!i || i == d3Node.parent.children.length - 1) ? 300 : 100
-                    // })
-                    // .nodeHeight((d3Node) => {
-                    //     return 100;
-                    //     let i = 0;
-                    //     if (d3Node.parent) { i = d3Node.parent.children.indexOf(d3Node); }
-                    //     if (i && i == d3Node.parent.children.length - 1) { return 300; }
-                    //     return (!i || i == d3Node.parent.children.length - 1) ? 200 : 100
-                    // })
-                    // .siblingsMargin(d3Node => 0)
-                    // .childrenMargin(d3Node => 50)
-                    // .neightbourMargin((n1, n2) => 50)
-                    // .compactMarginPair(d3Node => 70)
-                    // .compactMarginBetween(d3Node => 30)
-                    // .setActiveNodeCentered(true)
-                    // .layout(new URLSearchParams(new URL(document.location.href).search).get('layout') || "top")
-                    // .onNodeClick(d => console.log(d + ' node clicked'))
-                    // .linkUpdate(function (d3Node, i, arr) {
-                    //     const link = this;
-                    //     d3.select(link)
-                    //         .attr('stroke-dasharray', !i ? '2 2' : 'none')
-                    //         .attr('stroke-width', 3)
-                    // })
-                    // .nodeUpdate(function (data, i, arr) {
-                    //     d3.select(this).on('click.node', (event, d, i) => {
-                    //         console.log(d.nodeId + ' node clicked')
-                    //     })
-                    // })
-                    // .connections(
-                    //     [
-                    //         { id: 1, from: "O-6067", to: "O-6068", label: "Directly Reports To" },
-                    //         { id: 2, from: "O-6070", to: "O-6066", label: "Reports To" },
-                    //         { id: 3, from: "O-6088", to: "O-6069", label: "They were coworkers once" },
-                    //         { id: 3, from: "O-6164", to: "O-6070", label: "Possible conflicts of interest" }
-                    //     ],
-                    // )
-                    //                     .nodeContent(function (d, i, arr, state) {
-
-                    //                         return `
-                    //                            <div style="padding:0px">
-                    // <!--
-                    //                             ${state.layout == 'top' && state.compact && d.flexCompactDim && (d.flexCompactDim[0] || d.flexCompactDim[0] == 1) ? ` <div style="border:1px solid black;opacity:0.5;margin-left:${-(d.flexCompactDim[0] / 2 - d.width) / 2 + state.compactMarginPair(d) / 4}px;width:${d.flexCompactDim[0]}px;height:${d.flexCompactDim[1]}px;z-index:-1;position:absolute;background-color:red"></div>` : ''}
-                    //                             ${state.layout == 'bottom' && state.compact && d.flexCompactDim && (d.flexCompactDim[0] || d.flexCompactDim[0] == 1) ? ` <div style="border:1px solid black;opacity:0.5;margin-top:${-d.flexCompactDim[1] + d.height}px;margin-left:${-(d.flexCompactDim[0] / 2 - d.width) / 2 + state.compactMarginPair(d) / 4}px;width:${d.flexCompactDim[0]}px;height:${d.flexCompactDim[1]}px;z-index:-1;position:absolute;background-color:red"></div>` : ''}
-                    //                             ${state.layout == 'left' && state.compact && d.flexCompactDim && (d.flexCompactDim[0] || d.flexCompactDim[0] == 1) ? ` <div style="border:1px solid black;opacity:0.5;margin-top:${-(d.flexCompactDim[0]/2-d.height)/2+ state.compactMarginPair(d) / 4}px;margin-left:${0}px;width:${d.flexCompactDim[1]}px;height:${d.flexCompactDim[0]}px;z-index:-1;position:absolute;background-color:red"></div>` : ''}
-                    //                             ${state.layout == 'right' && state.compact && d.flexCompactDim && (d.flexCompactDim[0] || d.flexCompactDim[0] == 1) ? ` <div style="border:1px solid black;opacity:0.5; margin-top:${-(d.flexCompactDim[0]/2-d.height)/2+ state.compactMarginPair(d) / 4}px;margin-left:${d.width-d.flexCompactDim[1]}px;width:${d.flexCompactDim[1]}px;height:${d.flexCompactDim[0]}px;z-index:-1;position:absolute;background-color:red"></div>` : ''}
-                    //                         -->
-                    //                              <img src="${d.data.imageUrl}"  style="border-radius:100px;width:60px;height:60px;" />
-                    //                              ID: ${d.data.id} <br>
-                    //                              Children Direct:${d.data._directSubordinates}<br>
-                    //                              Children Total:${d.data._totalSubordinates}
-                    //                             </div>
-                    //                         `;
-                    //                     })
-
                     .nodeHeight(d => 85)
                     .nodeWidth(d => {
                         return 220
                     })
                     .childrenMargin(d => 50)
-                    .onNodeClick(d => alert('ok'))
+                    .onNodeClick(d => console.log(d))
                     .compactMarginBetween(d => 35)
                     .compactMarginPair(d => 30)
                     .neightbourMargin((a, b) => 20)
@@ -222,11 +169,6 @@
                             d3.select(this).raise()
                         }
                     })
-
-
-
-
-
                     .nodeContent(function (d, i, arr, state) {
                         const color = "#FFFFFF"
                         console.log({data:d})
@@ -244,13 +186,11 @@
                         </div>
                         `;
                     })
+                    .render();
 
+                   // attachDragHandler(chart);
 
-
-
-
-
-                    .render()
+                    console.log(d3,chart);
             })
     </script>
 

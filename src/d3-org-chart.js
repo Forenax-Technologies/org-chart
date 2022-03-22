@@ -18,7 +18,11 @@ const d3 = {
     zoom,
     zoomIdentity,
     linkHorizontal,
-    drag
+    drag,
+    data: null,
+    sourceNode: null,
+    targetNode: null,
+    attrs: null
 }
 export class OrgChart {
     constructor() {
@@ -74,10 +78,10 @@ export class OrgChart {
             linkUpdate: function (d, i, arr) {
                 d3.select(this)
                     .attr("stroke", d => d.data._upToTheRootHighlighted ? '#152785' : 'lightgray')
-                    .attr("stroke-width", d => d.data._upToTheRootHighlighted ? 5 : 2)
+                    .attr("stroke-width", d => d.data._upToTheRootHighlighted ? 5 : 2);
 
                 if (d.data._upToTheRootHighlighted) {
-                    d3.select(this).raise()
+                    d3.select(this).raise();
                 }
             },
             nodeUpdate: function (d, i, arr) {
@@ -86,7 +90,9 @@ export class OrgChart {
                     .attr("stroke", d => d.data._highlighted || d.data._upToTheRootHighlighted ? '#152785' : 'none')
                     .attr("stroke-width", d.data._highlighted || d.data._upToTheRootHighlighted ? 10 : 1)
             },
-
+            svg: null,
+            dragHandler: null,
+            refresh: this,
             nodeWidth: d3Node => 250,
             nodeHeight: d => 150,
             siblingsMargin: d3Node => 20,
@@ -96,10 +102,6 @@ export class OrgChart {
             compactMarginBetween: (d3Node => 20),
             onNodeClick: (d) => d,
             linkGroupArc: d3.linkHorizontal().x(d => d.x).y(d => d.y),
-            // ({ source, target }) => {
-            //     return
-            //     return `M ${source.x} , ${source.y} Q ${(source.x + target.x) / 2 + 100},${source.y-100}  ${target.x}, ${target.y}`;
-            // },
             nodeContent: d => `<div style="padding:5px;font-size:10px;">Sample Node(id=${d.id}), override using <br/> <br/>
             <code>chart<br/>
             &nbsp;.nodeContent({data}=>{ <br/>
@@ -309,6 +311,7 @@ export class OrgChart {
             selection.attr("class", selector);
             return selection;
         };
+
     }
 
     // This method retrieves passed node's children IDs (including node)
@@ -345,7 +348,7 @@ export class OrgChart {
         //InnerFunctions which will update visuals
         const attrs = this.getChartState();
         if (!attrs.data || attrs.data.length == 0) {
-            console.log('ORG CHART - Data is empty')
+            console.log('ORG CHART - Data is empty');
             return this;
         }
 
@@ -409,12 +412,12 @@ export class OrgChart {
             .style('background-color', attrs.backgroundColor)
             .attr("width", attrs.svgWidth)
             .attr("height", attrs.svgHeight)
-            .attr("font-family", attrs.defaultFont)
+            .attr("font-family", attrs.defaultFont);
 
         if (attrs.firstDraw) {
             svg.call(attrs.zoomBehavior)
                 .on("dblclick.zoom", null)
-                .attr("cursor", "move")
+                .attr("cursor", "move");
         }
 
 
@@ -426,34 +429,34 @@ export class OrgChart {
             .patternify({
                 tag: "g",
                 selector: "chart"
-            })
+            });
 
         // Add one more container g element, for better positioning controls
         attrs.centerG = chart
             .patternify({
                 tag: "g",
                 selector: "center-group"
-            })
+            });
 
         attrs.linksWrapper = attrs.centerG.patternify({
             tag: "g",
             selector: "links-wrapper"
-        })
+        });
 
         attrs.nodesWrapper = attrs.centerG.patternify({
             tag: "g",
             selector: "nodes-wrapper"
-        })
+        });
 
         attrs.connectionsWrapper = attrs.centerG.patternify({
             tag: "g",
             selector: "connections-wrapper"
-        })
+        });
 
         attrs.defsWrapper = svg.patternify({
             tag: "g",
             selector: "defs-wrapper"
-        })
+        });
 
         if (attrs.firstDraw) {
             attrs.centerG.attr("transform", () => {
@@ -487,37 +490,56 @@ export class OrgChart {
             attrs.firstDraw = false;
         }
 
+        attrs.svg = svg;
 
-        // add drag and drop
-        svg.selectAll('.node').call(d3.drag() // call specific function when circle is dragged
+        // // add drag and drop
+        const dragHandler = svg.selectAll('.node').call(d3.drag() // call specific function when circle is dragged
         .on("start", this.dragstarted)
         .on("drag", this.dragged)
         .on("end", this.dragended));
+        // assign data object
+        // d3.data = attrs.data;
+        // d3.attrs = attrs;
 
+        attrs.dragHandler = d3.drag();
+        d3.attrs = attrs;
         return this;
     }
 
     dragstarted(d) {
       d3.select(this).classed("dragging", true);
+      d3.sourceNode = d;
     }
     dragged(d,event) {
       const x = (d.x) - (event.width/2);
       d3.select(this).raise().attr('transform', `translate(${x},${d.y})`);
+      // set default style
       d3.selectAll('rect').attr("fill", "#fff").attr("stroke", "null").attr("stroke-width", "1px");
+      d3.targetNode = null;
       // check nodes overlapping
       const cP = {x0: d.x, y0: d.y,x1: d.x+event.width,y1: d.y+event.height};
-      const overlappedNode =d3.selectAll('g.node:not(.dragging)').filter((d,i) => {
+      d3.selectAll('g.node:not(.dragging)').filter((d,i) => {
        const cPInner = {x0: d.x, y0: d.y,x1: d.x+d.width,y1: d.y+d.height};
         if((cP.x1 > cPInner.x0  &&  cP.x0 < cPInner.x1) && ( cP.y1 > cPInner.y0 && cP.y0 < cPInner.y1)){
+          d3.targetNode = d;
           return d;
         }
       }).select('rect').attr("fill", "#e4e1e1").attr("stroke", "#e4e1e1").attr("stroke-width", "2px");
     }
     dragended(d,event) {
       d3.select(this).classed("dragging", false);
+      // set default style
       d3.selectAll('rect').attr("fill", "#fff").attr("stroke", "null").attr("stroke-width", "1px");
       const x = (d.subject.x) - (d.subject.width/2);
-      d3.select(this).raise().attr('transform', `translate(${x},${(d.subject.y)})`);
+      // d3.select(this).raise().attr('transform', `translate(${x},${(d.subject.y)})`);
+      d3.attrs.data[1].parentId = 'O-6068';
+      console.log(d3.attrs);
+
+      d3.attrs.refresh.updateThis(d3.attrs.refresh,d);
+      // clear current state
+      d3.sourceNode = null;
+      d3.targetNode = null;
+      return d3.data;
     }
 
     // This function can be invoked via chart.addNode API, and it adds node in tree at runtime
@@ -526,7 +548,7 @@ export class OrgChart {
         const nodeFound = attrs.allNodes.filter(({ data }) => attrs.nodeId(data) === attrs.nodeId(obj))[0];
         const parentFound = attrs.allNodes.filter(({ data }) => attrs.nodeId(data) === attrs.parentNodeId(obj))[0];
         if (nodeFound) {
-            console.log(`ORG CHART - ADD - Node with id "${attrs.nodeId(obj)}" already exists in tree`)
+            console.log(`ORG CHART - ADD - Node with id "${attrs.nodeId(obj)}" already exists in tree`);
             return this;
         }
         if (!parentFound) {
@@ -662,7 +684,6 @@ export class OrgChart {
         const attrs = this.getChartState();
         const calc = attrs.calc;
 
-
         if (attrs.compact) {
             this.calculateCompactFlexDimensions(attrs.root);
         }
@@ -688,7 +709,7 @@ export class OrgChart {
         const allNodesMap = {};
         attrs.allNodes.forEach(d => allNodesMap[attrs.nodeId(d.data)] = d);
 
-        const visibleNodesMap = {}
+        const visibleNodesMap = {};
         nodes.forEach(d => visibleNodesMap[attrs.nodeId(d.data)] = d);
 
         connections.forEach(connection => {
@@ -777,7 +798,7 @@ export class OrgChart {
 
         const connectionsSel = attrs.connectionsWrapper
             .selectAll("path.connection")
-            .data(visibleConnections)
+            .data(visibleConnections);
 
         // Enter any new connections at the parent's previous position.
         const connEnter = connectionsSel
@@ -852,7 +873,7 @@ export class OrgChart {
                 tag: "rect",
                 selector: "node-rect",
                 data: (d) => [d]
-            })
+            });
 
         // Node update styles
         const nodeUpdate = nodeEnter
@@ -865,14 +886,14 @@ export class OrgChart {
             selector: "node-foreign-object",
             data: (d) => [d]
         })
-            .style('overflow', 'visible')
+            .style('overflow', 'visible');
 
         // Add foreign object
         fo.patternify({
             tag: "xhtml:div",
             selector: "node-foreign-object-div",
             data: (d) => [d]
-        })
+        });
 
         this.restyleForeignObjectElements();
 
@@ -941,7 +962,7 @@ export class OrgChart {
             .attr("y", ({ height }) => 0)
             .attr("cursor", "pointer")
             .attr('rx', 3)
-            .attr("fill", attrs.nodeDefaultBackground)
+            .attr("fill", attrs.nodeDefaultBackground);
 
         // Move node button group to the desired position
         nodeUpdate
@@ -949,7 +970,7 @@ export class OrgChart {
             .attr("transform", ({ data, width, height }) => {
                 const x = attrs.layoutBindings[attrs.layout].buttonX({ width, height });
                 const y = attrs.layoutBindings[attrs.layout].buttonY({ width, height });
-                return `translate(${x},${y})`
+                return `translate(${x},${y})`;
             })
             .attr("display", ({ data }) => {
                 return data._directSubordinates > 0 ? null : 'none';
@@ -1009,7 +1030,7 @@ export class OrgChart {
         });
 
         // CHECK FOR CENTERING
-        const centeredNode = attrs.allNodes.filter(d => d.data._centered)[0]
+        const centeredNode = attrs.allNodes.filter(d => d.data._centered)[0];
         if (centeredNode) {
             const centeredNodes = centeredNode.data._centeredWithDescendants ? centeredNode.descendants().filter((d, i) => i < 7) : [centeredNode]
             centeredNode.data._centeredWithDescendants = null;
@@ -1018,10 +1039,374 @@ export class OrgChart {
                 animate: true,
                 scale: false,
                 nodes: centeredNodes
-            })
+            });
         }
 
     }
+
+    updateThis(chart,{ x0, y0, x = 0, y = 0, width, height }) {
+      const attrs = chart.getChartState();
+      const calc = attrs.calc;
+
+      if (attrs.compact) {
+          chart.calculateCompactFlexDimensions(attrs.root);
+      }
+
+      //  Assigns the x and y position for the nodes
+      const treeData = attrs.flexTreeLayout(attrs.root);
+
+      // Reassigns the x and y position for the based on the compact layout
+      if (attrs.compact) {
+          chart.calculateCompactFlexPositions(attrs.root);
+      }
+
+      const nodes = treeData.descendants();
+
+      // console.table(nodes.map(d => ({ x: d.x, y: d.y, width: d.width, height: d.height, flexCompactDim: d.flexCompactDim + "" })))
+
+      // Get all links
+      const links = treeData.descendants().slice(1);
+      nodes.forEach(attrs.layoutBindings[attrs.layout].swap)
+
+      // Connections
+      const connections = attrs.connections;
+      const allNodesMap = {};
+      attrs.allNodes.forEach(d => allNodesMap[attrs.nodeId(d.data)] = d);
+
+      const visibleNodesMap = {};
+      nodes.forEach(d => visibleNodesMap[attrs.nodeId(d.data)] = d);
+
+      connections.forEach(connection => {
+          const source = allNodesMap[connection.from];
+          const target = allNodesMap[connection.to];
+          connection._source = source;
+          connection._target = target;
+      })
+      const visibleConnections = connections.filter(d => visibleNodesMap[d.from] && visibleNodesMap[d.to]);
+      const defsString = attrs.defs.bind(chart)(attrs, visibleConnections);
+      const existingString = attrs.defsWrapper.html();
+      if (defsString !== existingString) {
+          attrs.defsWrapper.html(defsString)
+      }
+
+      // --------------------------  LINKS ----------------------
+      // Get links selection
+      const linkSelection = attrs.linksWrapper
+          .selectAll("path.link")
+          .data(links, (d) => attrs.nodeId(d.data));
+
+      // Enter any new links at the parent's previous position.
+      const linkEnter = linkSelection
+          .enter()
+          .insert("path", "g")
+          .attr("class", "link")
+          .attr("d", (d) => {
+              const xo = attrs.layoutBindings[attrs.layout].linkJoinX({ x: x0, y: y0, width, height });
+              const yo = attrs.layoutBindings[attrs.layout].linkJoinY({ x: x0, y: y0, width, height });
+              const o = { x: xo, y: yo };
+              return attrs.layoutBindings[attrs.layout].diagonal(o, o, o);
+          });
+
+      // Get links update selection
+      const linkUpdate = linkEnter.merge(linkSelection);
+
+      // Styling links
+      linkUpdate
+          .attr("fill", "none")
+
+      // Allow external modifications
+      linkUpdate.each(attrs.linkUpdate);
+
+      // Transition back to the parent element position
+      linkUpdate
+          .transition()
+          .duration(attrs.duration)
+          .attr("d", (d) => {
+              const n = attrs.compact && d.flexCompactDim ?
+                  {
+                      x: attrs.layoutBindings[attrs.layout].compactLinkMidX(d, attrs),
+                      y: attrs.layoutBindings[attrs.layout].compactLinkMidY(d, attrs)
+                  } :
+                  {
+                      x: attrs.layoutBindings[attrs.layout].linkX(d),
+                      y: attrs.layoutBindings[attrs.layout].linkY(d)
+                  };
+
+              const p = {
+                  x: attrs.layoutBindings[attrs.layout].linkParentX(d),
+                  y: attrs.layoutBindings[attrs.layout].linkParentY(d),
+              };
+
+              const m = attrs.compact && d.flexCompactDim ? {
+                  x: attrs.layoutBindings[attrs.layout].linkCompactXStart(d),
+                  y: attrs.layoutBindings[attrs.layout].linkCompactYStart(d),
+              } : n;
+              return attrs.layoutBindings[attrs.layout].diagonal(n, p, m);
+          });
+
+      // Remove any  links which is exiting after animation
+      const linkExit = linkSelection
+          .exit()
+          .transition()
+          .duration(attrs.duration)
+          .attr("d", (d) => {
+              const xo = attrs.layoutBindings[attrs.layout].linkJoinX({ x, y, width, height });
+              const yo = attrs.layoutBindings[attrs.layout].linkJoinY({ x, y, width, height });
+              const o = { x: xo, y: yo };
+              return attrs.layoutBindings[attrs.layout].diagonal(o, o);
+          })
+          .remove();
+
+
+      // --------------------------  CONNECTIONS ----------------------
+
+      const connectionsSel = attrs.connectionsWrapper
+          .selectAll("path.connection")
+          .data(visibleConnections);
+
+      // Enter any new connections at the parent's previous position.
+      const connEnter = connectionsSel
+          .enter()
+          .insert("path", "g")
+          .attr("class", "connection")
+          .attr("d", (d) => {
+              const xo = attrs.layoutBindings[attrs.layout].linkJoinX({ x: x0, y: y0, width, height });
+              const yo = attrs.layoutBindings[attrs.layout].linkJoinY({ x: x0, y: y0, width, height });
+              const o = { x: xo, y: yo };
+              return attrs.layoutBindings[attrs.layout].diagonal(o, o);
+          });
+
+
+      // Get connections update selection
+      const connUpdate = connEnter.merge(connectionsSel);
+
+      // Styling connections
+      connUpdate.attr("fill", "none")
+
+      // Transition back to the parent element position
+      connUpdate
+          .transition()
+          .duration(attrs.duration)
+          .attr('d', (d) => {
+              const xs = attrs.layoutBindings[attrs.layout].linkX({ x: d._source.x, y: d._source.y, width: d._source.width, height: d._source.height });
+              const ys = attrs.layoutBindings[attrs.layout].linkY({ x: d._source.x, y: d._source.y, width: d._source.width, height: d._source.height });
+              const xt = attrs.layoutBindings[attrs.layout].linkJoinX({ x: d._target.x, y: d._target.y, width: d._target.width, height: d._target.height });
+              const yt = attrs.layoutBindings[attrs.layout].linkJoinY({ x: d._target.x, y: d._target.y, width: d._target.width, height: d._target.height });
+              return attrs.linkGroupArc({ source: { x: xs, y: ys }, target: { x: xt, y: yt } })
+          })
+
+      // Allow external modifications
+      connUpdate.each(attrs.connectionsUpdate);
+
+      // Remove any  links which is exiting after animation
+      const connExit = connectionsSel
+          .exit()
+          .transition()
+          .duration(attrs.duration)
+          .attr('opacity', 0)
+          .remove();
+
+      // --------------------------  NODES ----------------------
+      // Get nodes selection
+      const nodesSelection = attrs.nodesWrapper
+          .selectAll("g.node")
+          .data(nodes, ({ data }) => attrs.nodeId(data));
+
+      // Enter any new nodes at the parent's previous position.
+      const nodeEnter = nodesSelection
+          .enter()
+          .append("g")
+          .attr("class", "node")
+          .attr("transform", (d) => {
+              if (d == attrs.root) return `translate(${x0},${y0})`
+              const xj = attrs.layoutBindings[attrs.layout].nodeJoinX({ x: x0, y: y0, width, height });
+              const yj = attrs.layoutBindings[attrs.layout].nodeJoinY({ x: x0, y: y0, width, height });
+              return `translate(${xj},${yj})`
+          })
+          .attr("cursor", "pointer")
+          .on("click", (event, { data }) => {
+              if ([...event.srcElement.classList].includes("node-button-foreign-object")) {
+                  return;
+              }
+              attrs.onNodeClick(attrs.nodeId(data));
+          });
+
+      // Add background rectangle for the nodes
+      nodeEnter
+          .patternify({
+              tag: "rect",
+              selector: "node-rect",
+              data: (d) => [d]
+          });
+
+      // Node update styles
+      const nodeUpdate = nodeEnter
+          .merge(nodesSelection)
+          .style("font", "12px sans-serif");
+
+      // Add foreignObject element inside rectangle
+      const fo = nodeUpdate.patternify({
+          tag: "foreignObject",
+          selector: "node-foreign-object",
+          data: (d) => [d]
+      })
+          .style('overflow', 'visible');
+
+      // Add foreign object
+      fo.patternify({
+          tag: "xhtml:div",
+          selector: "node-foreign-object-div",
+          data: (d) => [d]
+      });
+
+      chart.restyleForeignObjectElements();
+
+      // Add Node button circle's group (expand-collapse button)
+      const nodeButtonGroups = nodeEnter
+          .patternify({
+              tag: "g",
+              selector: "node-button-g",
+              data: (d) => [d]
+          })
+          .on("click", (event, d) => chart.onButtonClick(event, d));
+
+      nodeButtonGroups.patternify({
+          tag: 'rect',
+          selector: 'node-button-rect',
+          data: (d) => [d]
+      })
+          .attr('opacity', 0)
+          .attr('pointer-events', 'all')
+          .attr('width', 40)
+          .attr('height', 40)
+          .attr('x', -20)
+          .attr('y', -20)
+
+      // Add expand collapse button content
+      const nodeFo = nodeButtonGroups
+          .patternify({
+              tag: "foreignObject",
+              selector: "node-button-foreign-object",
+              data: (d) => [d]
+          })
+          .attr('width', 40)
+          .attr('height', 40)
+          .attr('x', -20)
+          .attr('y', -20)
+          .style('overflow', 'visible')
+          .patternify({
+              tag: "xhtml:div",
+              selector: "node-button-div",
+              data: (d) => [d]
+          })
+          .style('pointer-events', 'none')
+          .style('display', 'flex')
+          .style('width', '100%')
+          .style('height', '100%')
+
+
+
+      // Transition to the proper position for the node
+      nodeUpdate
+          .transition()
+          .attr("opacity", 0)
+          .duration(attrs.duration)
+          .attr("transform", ({ x, y, width, height }) => {
+              return attrs.layoutBindings[attrs.layout].nodeUpdateTransform({ x, y, width, height });
+
+          })
+          .attr("opacity", 1);
+
+      // Style node rectangles
+      nodeUpdate
+          .select(".node-rect")
+          .attr("width", ({ width }) => width)
+          .attr("height", ({ height }) => height)
+          .attr("x", ({ width }) => 0)
+          .attr("y", ({ height }) => 0)
+          .attr("cursor", "pointer")
+          .attr('rx', 3)
+          .attr("fill", attrs.nodeDefaultBackground);
+
+      // Move node button group to the desired position
+      nodeUpdate
+          .select(".node-button-g")
+          .attr("transform", ({ data, width, height }) => {
+              const x = attrs.layoutBindings[attrs.layout].buttonX({ width, height });
+              const y = attrs.layoutBindings[attrs.layout].buttonY({ width, height });
+              return `translate(${x},${y})`;
+          })
+          .attr("display", ({ data }) => {
+              return data._directSubordinates > 0 ? null : 'none';
+          })
+          .attr("opacity", ({ children, _children }) => {
+              if (children || _children) {
+                  return 1;
+              }
+              return 0;
+          });
+
+      // Restyle node button circle
+      nodeUpdate
+          .select(".node-button-foreign-object .node-button-div")
+          .html((node) => {
+              return attrs.buttonContent({ node, state: attrs })
+          })
+
+      // Restyle button texts
+      nodeUpdate
+          .select(".node-button-text")
+          .attr("text-anchor", "middle")
+          .attr("alignment-baseline", "middle")
+          .attr("fill", attrs.defaultTextFill)
+          .attr("font-size", ({ children }) => {
+              if (children) return 40;
+              return 26;
+          })
+          .text(({ children }) => {
+              if (children) return "-";
+              return "+";
+          })
+          .attr("y", chart.isEdge() ? 10 : 0);
+
+      nodeUpdate.each(attrs.nodeUpdate)
+
+      // Remove any exiting nodes after transition
+      const nodeExitTransition = nodesSelection
+          .exit()
+          .attr("opacity", 1)
+          .transition()
+          .duration(attrs.duration)
+          .attr("transform", (d) => {
+              const ex = attrs.layoutBindings[attrs.layout].nodeJoinX({ x, y, width, height });
+              const ey = attrs.layoutBindings[attrs.layout].nodeJoinY({ x, y, width, height });
+              return `translate(${ex},${ey})`
+          })
+          .on("end", function () {
+              d3.select(chart).remove();
+          })
+          .attr("opacity", 0);
+
+      // Store the old positions for transition.
+      nodes.forEach((d) => {
+          d.x0 = d.x;
+          d.y0 = d.y;
+      });
+
+      // CHECK FOR CENTERING
+      const centeredNode = attrs.allNodes.filter(d => d.data._centered)[0];
+      if (centeredNode) {
+          const centeredNodes = centeredNode.data._centeredWithDescendants ? centeredNode.descendants().filter((d, i) => i < 7) : [centeredNode]
+          centeredNode.data._centeredWithDescendants = null;
+          centeredNode.data._centered = null;
+          chart.fit({
+              animate: true,
+              scale: false,
+              nodes: centeredNodes
+          });
+      }
+
+  }
 
     // This function detects whether current browser is edge
     isEdge() {
@@ -1132,7 +1517,6 @@ export class OrgChart {
             d.data._centered = true;
             d.data._centeredWithDescendants = true;
         }
-
         // If childrens are expanded
         if (d.children) {
             //Collapse them
@@ -1151,7 +1535,6 @@ export class OrgChart {
                 d.children.forEach(({ data }) => (data._expanded = true));
             }
         }
-
         // Redraw Graph
         this.update(d);
     }
@@ -1304,13 +1687,13 @@ export class OrgChart {
     zoomTreeBounds({ x0, x1, y0, y1, params = { animate: true, scale: true } }) {
         const { centerG, svgWidth: w, svgHeight: h, svg, zoomBehavior, duration, lastTransform } = this.getChartState()
         let scaleVal = Math.min(8, 0.9 / Math.max((x1 - x0) / w, (y1 - y0) / h));
-        let identity = d3.zoomIdentity.translate(w / 2, h / 2)
-        identity = identity.scale(params.scale ? scaleVal : lastTransform.k)
+        let identity = d3.zoomIdentity.translate(w / 2, h / 2);
+        identity = identity.scale(params.scale ? scaleVal : lastTransform.k);
 
         identity = identity.translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
         // Transition zoom wrapper component into specified bounds
         svg.transition().duration(params.animate ? duration : 0).call(zoomBehavior.transform, identity);
-        centerG.transition().duration(params.animate ? duration : 0).attr('transform', 'translate(0,0)')
+        centerG.transition().duration(params.animate ? duration : 0).attr('transform', 'translate(0,0)');
     }
 
     fit({ animate = true, nodes, scale = true } = {}) {
@@ -1504,14 +1887,14 @@ export class OrgChart {
     expandAll() {
         const { allNodes, root } = this.getChartState();
         allNodes.forEach(d => d.data._expanded = true);
-        this.render()
+        this.render();
         return this;
     }
 
     collapseAll() {
         const { allNodes, root } = this.getChartState();
         allNodes.forEach(d => d.data._expanded = false);
-        this.expandLevel(0)
+        this.expandLevel(0);
         this.render();
         return this;
     }
