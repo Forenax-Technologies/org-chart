@@ -1,13 +1,14 @@
-import { selection, select } from "d3-selection";
+import { selection, select,selectAll } from "d3-selection";
 import { max, min, sum, cumsum } from "d3-array";
 import { tree, stratify } from "d3-hierarchy";
 import { zoom, zoomIdentity } from "d3-zoom";
 import { flextree } from 'd3-flextree';
 import { linkHorizontal } from 'd3-shape';
-
+import {drag} from 'd3-drag';
 const d3 = {
     selection,
     select,
+    selectAll,
     max,
     min,
     sum,
@@ -17,10 +18,11 @@ const d3 = {
     zoom,
     zoomIdentity,
     linkHorizontal,
+    drag
 }
 export class OrgChart {
     constructor() {
-        // Exposed variables 
+        // Exposed variables
         const attrs = {
             id: `ID${Math.floor(Math.random() * 1000000)}`, // Id for event handlings
             firstDraw: true,
@@ -95,17 +97,17 @@ export class OrgChart {
             onNodeClick: (d) => d,
             linkGroupArc: d3.linkHorizontal().x(d => d.x).y(d => d.y),
             // ({ source, target }) => {
-            //     return 
+            //     return
             //     return `M ${source.x} , ${source.y} Q ${(source.x + target.x) / 2 + 100},${source.y-100}  ${target.x}, ${target.y}`;
             // },
-            nodeContent: d => `<div style="padding:5px;font-size:10px;">Sample Node(id=${d.id}), override using <br/> <br/> 
+            nodeContent: d => `<div style="padding:5px;font-size:10px;">Sample Node(id=${d.id}), override using <br/> <br/>
             <code>chart<br/>
             &nbsp;.nodeContent({data}=>{ <br/>
              &nbsp;&nbsp;&nbsp;&nbsp;return '' // Custom HTML <br/>
              &nbsp;})</code>
              <br/> <br/>
              Or check different <a href="https://github.com/bumbeishvili/org-chart#jump-to-examples" target="_blank">layout examples</a>
-             
+
              </div>`,
             layout: "top",// top, left,right, bottom
             buttonContent: ({ node, state }) => {
@@ -415,6 +417,8 @@ export class OrgChart {
                 .attr("cursor", "move")
         }
 
+
+
         attrs.svg = svg;
 
         //Add container g element
@@ -483,7 +487,37 @@ export class OrgChart {
             attrs.firstDraw = false;
         }
 
+
+        // add drag and drop
+        svg.selectAll('.node').call(d3.drag() // call specific function when circle is dragged
+        .on("start", this.dragstarted)
+        .on("drag", this.dragged)
+        .on("end", this.dragended));
+
         return this;
+    }
+
+    dragstarted(d) {
+      d3.select(this).classed("dragging", true);
+    }
+    dragged(d,event) {
+      const x = (d.x) - (event.width/2);
+      d3.select(this).raise().attr('transform', `translate(${x},${d.y})`);
+      d3.selectAll('rect').attr("fill", "#fff").attr("stroke", "null").attr("stroke-width", "1px");
+      // check nodes overlapping
+      const cP = {x0: d.x, y0: d.y,x1: d.x+event.width,y1: d.y+event.height};
+      const overlappedNode =d3.selectAll('g.node:not(.dragging)').filter((d,i) => {
+       const cPInner = {x0: d.x, y0: d.y,x1: d.x+d.width,y1: d.y+d.height};
+        if((cP.x1 > cPInner.x0  &&  cP.x0 < cPInner.x1) && ( cP.y1 > cPInner.y0 && cP.y0 < cPInner.y1)){
+          return d;
+        }
+      }).select('rect').attr("fill", "#e4e1e1").attr("stroke", "#e4e1e1").attr("stroke-width", "2px");
+    }
+    dragended(d,event) {
+      d3.select(this).classed("dragging", false);
+      d3.selectAll('rect').attr("fill", "#fff").attr("stroke", "null").attr("stroke-width", "1px");
+      const x = (d.subject.x) - (d.subject.width/2);
+      d3.select(this).raise().attr('transform', `translate(${x},${(d.subject.y)})`);
     }
 
     // This function can be invoked via chart.addNode API, and it adds node in tree at runtime
@@ -1028,12 +1062,12 @@ export class OrgChart {
                   L ${mx} ${y}
                   L ${x} ${y}
                   L ${x + w * xrvs} ${y}
-                  C ${x + w * xrvs + r * xrvs} ${y} 
-                    ${x + w * xrvs + r * xrvs} ${y} 
+                  C ${x + w * xrvs + r * xrvs} ${y}
+                    ${x + w * xrvs + r * xrvs} ${y}
                     ${x + w * xrvs + r * xrvs} ${y + r * yrvs}
-                  L ${x + w * xrvs + r * xrvs} ${ey - r * yrvs} 
-                  C ${x + w * xrvs + r * xrvs}  ${ey} 
-                    ${x + w * xrvs + r * xrvs}  ${ey} 
+                  L ${x + w * xrvs + r * xrvs} ${ey - r * yrvs}
+                  C ${x + w * xrvs + r * xrvs}  ${ey}
+                    ${x + w * xrvs + r * xrvs}  ${ey}
                     ${ex - w * xrvs}  ${ey}
                   L ${ex} ${ey}
        `;
