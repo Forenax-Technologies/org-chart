@@ -128,20 +128,13 @@
     <!----------------  ORG CHART ESSENTIAL CONTENT ---------------->
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="./build/d3-org-chart.js"></script>
+    <script src="./build//d3-org-chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.0.0/build/d3-flextree.js"></script>
     <div class="chart-container" style=" padding-top:10px;  height:1200px ;background-color:white"> </div>
 
     <script>
         var index = 0;
         var chart;
-        function attachDragHandler(chart){
-            // add drag and drop
-        const dragHandler = d3.select('.chart-container').selectAll('.node').call(d3.drag() // call specific function when circle is dragged
-        .on("start", chart.dragstarted)
-        .on("drag", chart.dragged)
-        .on("end", chart.dragended));
-        }
         d3.csv('misc/data.csv')
             .then(dataFlattened => {
                 chart = new d3.OrgChart()
@@ -153,7 +146,6 @@
                         return 220
                     })
                     .childrenMargin(d => 50)
-                    .onNodeClick(d => console.log(d))
                     .compactMarginBetween(d => 35)
                     .compactMarginPair(d => 30)
                     .neightbourMargin((a, b) => 20)
@@ -171,7 +163,6 @@
                     })
                     .nodeContent(function (d, i, arr, state) {
                         const color = "#FFFFFF"
-                        console.log({data:d})
                         return `
                          <div style="font-family: 'Inter', sans-serif;position:absolute;margin-top:-1px; margin-left:-1px;width:${d.width}px;height:${d.height}px;border-radius:10px;border: 1px solid #E4E2E9">
                             <div style="background-color:${color};position:absolute;margin-top:-25px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
@@ -187,10 +178,6 @@
                         `;
                     })
                     .render();
-
-                   // attachDragHandler(chart);
-
-                    console.log(d3,chart);
             })
     </script>
 
