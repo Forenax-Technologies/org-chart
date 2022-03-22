@@ -49,6 +49,9 @@ Custom components & algorithms I used
 * [Flextree Algorithm](https://github.com/Klortho/d3-flextree)
 
 
+### New Feature:
+Drag and Drop of Each Node Added. 
+
 ### Usage
 
 Tip: Just copy this code and paste at - https://realtimehtml.com/
