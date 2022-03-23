@@ -101,6 +101,7 @@ export class OrgChart {
             compactMarginPair: d => 100,
             compactMarginBetween: (d3Node => 20),
             onNodeClick: (d) => d,
+            onDrop: (dropData) => dropData,
             linkGroupArc: d3.linkHorizontal().x(d => d.x).y(d => d.y),
             nodeContent: d => `<div style="padding:5px;font-size:10px;">Sample Node(id=${d.id}), override using <br/> <br/>
             <code>chart<br/>
@@ -554,9 +555,9 @@ export class OrgChart {
         d3.attrs.data[sourceNodeIndex].parentId = targetNodeData.id;
 
         d3.attrs.refresh.render();
+
+        d3.attrs.onDrop({source: d3.attrs.data[sourceNodeIndex],target: d3.attrs.data[targetNodeIndex]});
       }
-
-
       // clear current state
       d3.sourceNode = null;
       d3.targetNode = null;
