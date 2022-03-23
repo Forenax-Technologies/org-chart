@@ -99,6 +99,8 @@
 
         <button onclick='downloadPdf()' class="simptip-position-bottom" data-tooltip='downloadPdf()'>Download PDF
         </button>
+        <button onclick='console.log(chart.exportData())' class="simptip-position-bottom" data-tooltip='exportData()'>Export Data
+        </button>
 
         <script>
             function downloadPdf() {
@@ -178,6 +180,7 @@
                         `;
                     })
                     .render();
+
             })
     </script>
 

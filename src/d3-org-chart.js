@@ -1655,4 +1655,8 @@ export class OrgChart {
         const measurement = ctx.measureText(text);
         return measurement.width;
     }
+
+    exportData(){
+        return d3.attrs.data;
+    }
 }
