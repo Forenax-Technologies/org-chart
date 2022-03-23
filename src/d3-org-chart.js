@@ -1657,6 +1657,7 @@ export class OrgChart {
     }
 
     exportData(){
-        return d3.attrs.data;
+        const attrs = this.getChartState();
+        return  attrs.data;
     }
 }
