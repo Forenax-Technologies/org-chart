@@ -554,7 +554,7 @@ export class OrgChart {
 
         d3.attrs.data[sourceNodeIndex].parentId = targetNodeData.id;
 
-        d3.attrs.refresh.render();
+        d3.attrs.refresh.updateNodesState();
 
         d3.attrs.onDrop({source: d3.attrs.data[sourceNodeIndex],target: d3.attrs.data[targetNodeIndex]});
       }
