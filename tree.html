@@ -168,7 +168,7 @@
                         return `
                          <div style="font-family: 'Inter', sans-serif;position:absolute;margin-top:-1px; margin-left:-1px;width:${d.width}px;height:${d.height}px;border-radius:10px;border: 1px solid #E4E2E9">
                             <div style="background-color:${color};position:absolute;margin-top:-25px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
-                            <img src=" ${d.data.imageUrl}" style="position:absolute;margin-top:-20px;margin-left:${20}px;border-radius:100px;width:40px;height:40px;" />
+                            <img onclick="javascript:console.log('Hello')" src=" ${d.data.imageUrl}" style="position:absolute;margin-top:-20px;margin-left:${20}px;border-radius:100px;width:40px;height:40px;" />
 
                            <div style="color:#08011E;position:absolute;right:20px;top:17px;font-size:10px;"><i class="fas fa-ellipsis-h"></i></div>
 
@@ -181,6 +181,9 @@
                     })
                     .onDrop(function (dropData) {
                       console.log(dropData);
+                    })
+                    .onNodeClick(function(d){
+                      console.log('Node Click:', d);
                     })
                     .render();
                     chart.expandAll();

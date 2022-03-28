@@ -498,12 +498,13 @@ export class OrgChart {
         // // add drag and drop
         d3.attrs = attrs;
 
-        this.dragHandler();
-
         return this;
     }
-    dragHandler(){
-      d3.select('.chart-container').selectAll('.node').selectAll('.node').call(d3.drag() // call specific function when circle is dragged
+
+    dragAttachHandler(){
+      const attrs = this.getChartState();
+      attrs.svg.selectAll('.node').call(d3.drag()
+       .clickDistance(50) // call specific function when circle is dragged
       .on("start", this.dragstarted)
       .on("drag", this.dragged)
       .on("end", this.dragended));
@@ -514,6 +515,13 @@ export class OrgChart {
     }
     dragged(d,event) {
       const x = (d.x) - (event.width/2);
+      const _x = (event.x - d.x);
+      const _y = (event.y - d.y);
+      const moveThreshold = 30;
+      const isMoved = (_x > -(moveThreshold) && _x < (moveThreshold)) || (_y > -(moveThreshold) && _y < (moveThreshold));
+
+      if(!isMoved) return;
+
       d3.select(this).raise().attr('transform', `translate(${x},${d.y})`);
       // set default style
       d3.selectAll('rect').attr("fill", "#fff").attr("stroke", "null").attr("stroke-width", "1px");
@@ -540,9 +548,10 @@ export class OrgChart {
 
       // set default style
       d3.selectAll('rect').attr("fill", "#fff").attr("stroke", "null").attr("stroke-width", "1px");
+
       const x = (d.subject.x) - (d.subject.width/2);
 
-      d3.select(this).raise().attr('transform', `translate(${x},${(d.subject.y)})`);
+      d3.select(this).attr('transform', `translate(${x},${(d.subject.y)})`);
 
       if(d3.sourceNode && d3.targetNode){
 
@@ -857,7 +866,7 @@ export class OrgChart {
         const connUpdate = connEnter.merge(connectionsSel);
 
         // Styling connections
-        connUpdate.attr("fill", "none")
+        connUpdate.attr("fill", "none");
 
         // Transition back to the parent element position
         connUpdate
@@ -869,7 +878,7 @@ export class OrgChart {
                 const xt = attrs.layoutBindings[attrs.layout].linkJoinX({ x: d._target.x, y: d._target.y, width: d._target.width, height: d._target.height });
                 const yt = attrs.layoutBindings[attrs.layout].linkJoinY({ x: d._target.x, y: d._target.y, width: d._target.width, height: d._target.height });
                 return attrs.linkGroupArc({ source: { x: xs, y: ys }, target: { x: xt, y: yt } })
-            })
+            });
 
         // Allow external modifications
         connUpdate.each(attrs.connectionsUpdate);
@@ -887,6 +896,8 @@ export class OrgChart {
         const nodesSelection = attrs.nodesWrapper
             .selectAll("g.node")
             .data(nodes, ({ data }) => attrs.nodeId(data));
+
+
 
         // Enter any new nodes at the parent's previous position.
         const nodeEnter = nodesSelection
@@ -1082,10 +1093,8 @@ export class OrgChart {
             });
         }
 
-       attrs.svg.selectAll('.node').call(d3.drag() // call specific function when circle is dragged
-      .on("start", this.dragstarted)
-      .on("drag", this.dragged)
-      .on("end", this.dragended));
+         // attach drag and drop event
+         this.dragAttachHandler();
 
 
       const _attrs = this.getChartState();
@@ -1387,9 +1396,8 @@ export class OrgChart {
           const attrs = this.getChartState();
           const { root,allNodes } = attrs;
 
-          let descendants = (nodes ? nodes : (root.descendants() ? root.descendants() : allNodes));
+          let descendants = (nodes ? nodes : (root ? root.descendants() : allNodes));
 
-          console.log('Desc:', descendants);
           const minX = d3.min(descendants, d => d.x + attrs.layoutBindings[attrs.layout].nodeLeftX(d));
           const maxX = d3.max(descendants, d => d.x + attrs.layoutBindings[attrs.layout].nodeRightX(d));
           const minY = d3.min(descendants, d => d.y + attrs.layoutBindings[attrs.layout].nodeTopY(d));
