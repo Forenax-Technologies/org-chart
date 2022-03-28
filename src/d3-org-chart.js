@@ -65,7 +65,8 @@ export class OrgChart {
                        </marker>
                     `}).join("")}
                     </defs>
-                    `},
+                    `;
+                  },
             connectionsUpdate: function (d, i, arr) {
                 d3.select(this)
                     .attr("stroke", d => '#152785')
@@ -93,6 +94,7 @@ export class OrgChart {
             svg: null,
             dragHandler: null,
             refresh: this,
+            descendants: null,
             nodeWidth: d3Node => 250,
             nodeHeight: d => 150,
             siblingsMargin: d3Node => 20,
@@ -501,7 +503,6 @@ export class OrgChart {
         return this;
     }
     dragHandler(){
-      console.log('handle');
       d3.select('.chart-container').selectAll('.node').selectAll('.node').call(d3.drag() // call specific function when circle is dragged
       .on("start", this.dragstarted)
       .on("drag", this.dragged)
@@ -519,6 +520,7 @@ export class OrgChart {
       d3.targetNode = null;
       // check nodes overlapping
       const cP = {x0: d.x, y0: d.y,x1: d.x+event.width,y1: d.y+event.height};
+
       d3.selectAll('g.node:not(.dragging)').filter((d,i) => {
        const cPInner = {x0: d.x, y0: d.y,x1: d.x+d.width,y1: d.y+d.height};
         if((cP.x1 > cPInner.x0  &&  cP.x0 < cPInner.x1) && ( cP.y1 > cPInner.y0 && cP.y0 < cPInner.y1)){
@@ -535,9 +537,11 @@ export class OrgChart {
     }
 
       d3.select(this).classed("dragging", false);
+
       // set default style
       d3.selectAll('rect').attr("fill", "#fff").attr("stroke", "null").attr("stroke-width", "1px");
       const x = (d.subject.x) - (d.subject.width/2);
+
       d3.select(this).raise().attr('transform', `translate(${x},${(d.subject.y)})`);
 
       if(d3.sourceNode && d3.targetNode){
@@ -753,12 +757,12 @@ export class OrgChart {
             const target = allNodesMap[connection.to];
             connection._source = source;
             connection._target = target;
-        })
+        });
         const visibleConnections = connections.filter(d => visibleNodesMap[d.from] && visibleNodesMap[d.to]);
         const defsString = attrs.defs.bind(this)(attrs, visibleConnections);
         const existingString = attrs.defsWrapper.html();
         if (defsString !== existingString) {
-            attrs.defsWrapper.html(defsString)
+            attrs.defsWrapper.html(defsString);
         }
 
         // --------------------------  LINKS ----------------------
@@ -784,7 +788,7 @@ export class OrgChart {
 
         // Styling links
         linkUpdate
-            .attr("fill", "none")
+            .attr("fill", "none");
 
         // Allow external modifications
         linkUpdate.each(attrs.linkUpdate);
@@ -1041,7 +1045,7 @@ export class OrgChart {
             })
             .attr("y", this.isEdge() ? 10 : 0);
 
-        nodeUpdate.each(attrs.nodeUpdate)
+        nodeUpdate.each(attrs.nodeUpdate);
 
         // Remove any exiting nodes after transition
         const nodeExitTransition = nodesSelection
@@ -1052,7 +1056,7 @@ export class OrgChart {
             .attr("transform", (d) => {
                 const ex = attrs.layoutBindings[attrs.layout].nodeJoinX({ x, y, width, height });
                 const ey = attrs.layoutBindings[attrs.layout].nodeJoinY({ x, y, width, height });
-                return `translate(${ex},${ey})`
+                return `translate(${ex},${ey})`;
             })
             .on("end", function () {
                 d3.select(this).remove();
@@ -1082,6 +1086,13 @@ export class OrgChart {
       .on("start", this.dragstarted)
       .on("drag", this.dragged)
       .on("end", this.dragended));
+
+
+      const _attrs = this.getChartState();
+      const { root } = _attrs;
+      if(root && root.descendants()){
+        this.descendants = root.descendants();
+      }
     }
     // This function detects whether current browser is edge
     isEdge() {
@@ -1372,21 +1383,33 @@ export class OrgChart {
     }
 
     fit({ animate = true, nodes, scale = true } = {}) {
-        const attrs = this.getChartState();
-        const { root } = attrs;
-        let descendants = nodes ? nodes : root.descendants();
-        const minX = d3.min(descendants, d => d.x + attrs.layoutBindings[attrs.layout].nodeLeftX(d))
-        const maxX = d3.max(descendants, d => d.x + attrs.layoutBindings[attrs.layout].nodeRightX(d))
-        const minY = d3.min(descendants, d => d.y + attrs.layoutBindings[attrs.layout].nodeTopY(d))
-        const maxY = d3.max(descendants, d => d.y + attrs.layoutBindings[attrs.layout].nodeBottomY(d))
+        try {
+          const attrs = this.getChartState();
+          const { root,allNodes } = attrs;
 
-        this.zoomTreeBounds({
-            params: { animate: animate, scale },
-            x0: minX - 50,
-            x1: maxX + 50,
-            y0: minY - 50,
-            y1: maxY + 50,
-        });
+          let descendants = (nodes ? nodes : root.descendants());
+
+          if(!descendants && allNodes){
+            descendants =  attrs.allNodes;
+          }
+
+          console.log('Desc:', descendants);
+          const minX = d3.min(descendants, d => d.x + attrs.layoutBindings[attrs.layout].nodeLeftX(d));
+          const maxX = d3.max(descendants, d => d.x + attrs.layoutBindings[attrs.layout].nodeRightX(d));
+          const minY = d3.min(descendants, d => d.y + attrs.layoutBindings[attrs.layout].nodeTopY(d));
+          const maxY = d3.max(descendants, d => d.y + attrs.layoutBindings[attrs.layout].nodeBottomY(d));
+
+          this.zoomTreeBounds({
+              params: { animate: animate, scale },
+              x0: minX - 50,
+              x1: maxX + 50,
+              y0: minY - 50,
+              y1: maxY + 50,
+          });
+        } catch (error) {
+          console.error('Error in fit', error);
+        }
+
         return this;
     }
 
@@ -1672,6 +1695,10 @@ export class OrgChart {
 
     exportData(){
         const attrs = this.getChartState();
-        return  attrs.data;
+        if(attrs && attrs.data){
+          return  attrs.data;
+        } else{
+          return null;
+        }
     }
 }
