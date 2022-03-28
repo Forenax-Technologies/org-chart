@@ -1387,11 +1387,7 @@ export class OrgChart {
           const attrs = this.getChartState();
           const { root,allNodes } = attrs;
 
-          let descendants = (nodes ? nodes : root.descendants());
-
-          if(!descendants && allNodes){
-            descendants =  attrs.allNodes;
-          }
+          let descendants = (nodes ? nodes : (root.descendants() ? root.descendants() : allNodes));
 
           console.log('Desc:', descendants);
           const minX = d3.min(descendants, d => d.x + attrs.layoutBindings[attrs.layout].nodeLeftX(d));
