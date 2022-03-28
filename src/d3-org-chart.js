@@ -22,7 +22,7 @@ const d3 = {
     data: null,
     sourceNode: null,
     targetNode: null,
-    attrs: null
+    attrs: null,
 }
 export class OrgChart {
     constructor() {
@@ -504,23 +504,24 @@ export class OrgChart {
     dragAttachHandler(){
       const attrs = this.getChartState();
       attrs.svg.selectAll('.node').call(d3.drag()
-      // .clickDistance(50) // call specific function when circle is dragged
       .on("start", this.dragstarted)
       .on("drag", this.dragged)
       .on("end", this.dragended));
     }
     dragstarted(d) {
+      d.sourceEvent.stopPropagation();
       d3.select(this).classed("dragging", true);
       d3.sourceNode = d;
     }
     dragged(d,event) {
       const x = (d.x) - (event.width/2);
-      const _x = (event.x - d.x);
-      const _y = (event.y - d.y);
-      const moveThreshold = 30;
-      const isMoved = (_x > -(moveThreshold) && _x < (moveThreshold)) || (_y > -(moveThreshold) && _y < (moveThreshold));
 
-      if(!isMoved) return;
+      // const _x = (event.x - d.x);
+      // const _y = (event.y - d.y);
+      // const moveThreshold = 30;
+      // const isMoved = (_x > -(moveThreshold) && _x < (moveThreshold)) || (_y > -(moveThreshold) && _y < (moveThreshold));
+
+      // if(!isMoved) return;
 
       d3.select(this).raise().attr('transform', `translate(${x},${d.y})`);
       // set default style
@@ -912,6 +913,8 @@ export class OrgChart {
             })
             .attr("cursor", "pointer")
             .on("click", (event, { data }) => {
+              if (event.defaultPrevented) return;
+
                 if ([...event.srcElement.classList].includes("node-button-foreign-object")) {
                     return;
                 }

@@ -139,7 +139,7 @@
         var chart;
         d3.csv('misc/data.csv')
             .then(dataFlattened => {
-                chart = new d3.OrgChart()
+                chart = new d3.OrgChart(d3)
                     .container('.chart-container')
                     .data(dataFlattened)
                     .scaleExtent([1,1])
