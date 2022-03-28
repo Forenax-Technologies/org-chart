@@ -548,8 +548,21 @@ export class OrgChart {
         const sourceNodeIndex = d3.attrs.data.findIndex(d => d.id == sourceNodeData.id);
         const targetNodeIndex = d3.attrs.data.findIndex(d => d.id == targetNodeData.id);
 
+
         if(targetNodeData.parentId == sourceNodeData.id){
           d3.attrs.data[targetNodeIndex].parentId = sourceNodeData.parentId;
+        } else {
+          const sourceId = sourceNodeData.id;
+          const sourceParentId = sourceNodeData.parentId;
+          // get all children of source node
+          const sourceChildren = d3.attrs.data.filter(d => d.parentId == sourceId);
+
+          if(sourceChildren){
+          // replace parentId of all children with source ParentId
+          sourceChildren.forEach(d => {
+            d.parentId = sourceParentId;
+          });
+          }
         }
 
         d3.attrs.data[sourceNodeIndex].parentId = targetNodeData.id;
