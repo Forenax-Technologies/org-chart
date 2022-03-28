@@ -504,7 +504,7 @@ export class OrgChart {
     dragAttachHandler(){
       const attrs = this.getChartState();
       attrs.svg.selectAll('.node').call(d3.drag()
-       .clickDistance(50) // call specific function when circle is dragged
+      // .clickDistance(50) // call specific function when circle is dragged
       .on("start", this.dragstarted)
       .on("drag", this.dragged)
       .on("end", this.dragended));
